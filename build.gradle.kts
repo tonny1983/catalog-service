@@ -1,4 +1,5 @@
 import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
+import org.springframework.boot.gradle.tasks.run.BootRun
 import java.util.*
 
 plugins {
@@ -27,12 +28,50 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:2.2.0")
+    implementation("org.springframework.cloud:spring-cloud-starter-config")
+    implementation("org.springframework.retry:spring-retry")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
+    implementation("org.flywaydb:flyway-core")
+    runtimeOnly("org.postgresql:postgresql")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webflux")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
+    testImplementation("com.h2database:h2")
+}
+
+configurations {
+    compileOnly {
+        extendsFrom(configurations.annotationProcessor.get())
+    }
+}
+
+extra["springCloudVersion"] = "2022.0.4"
+
+if (System.getenv("SPRING_PROFILES_ACTIVE") == "docker") {
+    extra["testcontainersVersion"] = "1.19.0"
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+    }
 }
 
 tasks.withType<Test> {
+    project.logger.info("my info message")
     useJUnitPlatform()
+
+    if (System.getenv("SPRING_PROFILES_ACTIVE") == "docker") {
+        println("HERE")
+        systemProperty("spring.profiles.active", "docker")
+        exclude("**/*Embedded*")
+    } else {
+        exclude("**/*Docker*")
+    }
 }
 
 tasks.getByName<BootBuildImage>("bootBuildImage") {
@@ -40,4 +79,10 @@ tasks.getByName<BootBuildImage>("bootBuildImage") {
         builder = "ghcr.io/thomasvitale/java-builder-arm64"
     }
     builder = "paketobuildpacks/builder:tiny"
+
+
+}
+
+tasks.getByName<BootRun>("bootRun") {
+    systemProperty("spring.profiles.active", "testdata")
 }

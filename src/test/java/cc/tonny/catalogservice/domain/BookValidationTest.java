@@ -20,14 +20,14 @@ public class BookValidationTest {
 
     @Test
     void whenAlFieldsCorrectThenValidationSucceeds() {
-        var book = new Book("1234567890", "Title", "Author", BigDecimal.ONE);
+        var book = new Book(1L, "1234567890", "Title", "Author", BigDecimal.ONE, "pigeon", null, null, 0);
         var violations = validator.validate(book);
         assertThat(violations).isEmpty();
     }
 
     @Test
     void whenIsbnDefinedButIncorrectThenValidationFails() {
-        var book = new Book("a234567890", "Title", "Author", BigDecimal.ONE);
+        var book = new Book(1L, "a234567890", "Title", "Author", BigDecimal.ONE, "pigeon", null, null, 0);
         var violations = validator.validate(book);
         assertThat(violations).hasSize(1);
         assertThat(violations.iterator().next().getMessage()).isEqualTo("The ISBN format must be valid!");

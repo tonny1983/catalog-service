@@ -1,5 +1,6 @@
 package cc.tonny.catalogservice.domain;
 
+import cc.tonny.catalogservice.adapter.outbound.BookRepository;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,10 +35,15 @@ public class BookService {
         return bookRepository.findByIsbn(isbn)
                 .map(existingBook -> {
                     var bookToUpdate = new Book(
+                            existingBook.id(),
                             existingBook.isbn(),
                             book.title(),
                             book.author(),
-                            book.price());
+                            book.price(),
+                            book.publisher(),
+                            existingBook.createdDate(),
+                            existingBook.lastModifiedDate(),
+                            existingBook.version());
                     return bookRepository.save(bookToUpdate);
                 })
                 .orElseGet(() -> addBookToCatalog(book));
