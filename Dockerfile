@@ -1,9 +1,17 @@
+FROM openjdk:17-slim AS builder
+WORKDIR workspace
+ARG JAR_FILE=build/libs/*.jar
+COPY ${JAR_FILE} catalog-service.jar
+RUN java -Djarmode=layertools -jar catalog-service.jar extract
+
 FROM openjdk:17-slim
+RUN useradd spring
+USER spring
+WORKDIR app
+COPY --from=builder workspace/dependencies/ ./
+COPY --from=builder workspace/spring-boot-loader/ ./
+COPY --from=builder workspace/snapshot-dependencies/ ./
+COPY --from=builder workspace/application/ ./
+ENTRYPOINT ["java", "org.springframework.boot.loader.JarLaucher"]
 
 EXPOSE 8080
-
-RUN mkdir /app
-
-COPY build/libs/*.jar /app/spring-boot-application.jar
-
-ENTRYPOINT ["java", "-XX:+UnlockExperimentalVMOptions", "-Djava.security.egd=file:/dev/./urandom","-jar","/app/spring-boot-application.jar"]

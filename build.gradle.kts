@@ -76,13 +76,24 @@ tasks.withType<Test> {
 
 tasks.getByName<BootBuildImage>("bootBuildImage") {
     if (System.getProperty( "os.arch" ).lowercase(Locale.getDefault()).startsWith("aarch")) {
-        builder = "ghcr.io/thomasvitale/java-builder-arm64"
+        builder.set("dashaun/builder:tiny")
+    } else {
+        builder.set("paketobuildpacks/builder:tiny")
     }
-    builder = "paketobuildpacks/builder:tiny"
 
+    imageName.set(project.name)
+    environment.put("BP_JVM_VERSION", "17.*")
+
+    if (System.getenv().containsKey("HTTP_PROXY")) {
+        environment.put("HTTP_PROXY", System.getenv("HTTP_PROXY"))
+    }
+    if (System.getenv().containsKey("HTTPS_PROXY")) {
+        environment.put("HTTPS_PROXY", System.getenv("HTTPS_PROXY"))
+    }
 
 }
 
 tasks.getByName<BootRun>("bootRun") {
     systemProperty("spring.profiles.active", "testdata")
 }
+
