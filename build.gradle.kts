@@ -4,9 +4,12 @@ import java.util.*
 
 plugins {
     java
+    `maven-publish`
     id("org.springframework.boot") version "3.1.3"
     id("io.spring.dependency-management") version "1.1.3"
     id("org.springdoc.openapi-gradle-plugin") version "1.7.0"
+    id("org.springframework.cloud.contract") version "4.0.4"
+    kotlin("jvm") version "1.9.20-Beta2"
 }
 
 group = "cc.tonny"
@@ -16,11 +19,21 @@ java {
     sourceCompatibility = JavaVersion.VERSION_17
 }
 
+
 repositories {
     mavenLocal()
     maven { url = uri("https://mirrors.huaweicloud.com/repository/maven/") }
     mavenCentral()
 
+}
+
+buildscript {
+    val scContractVersion = "4.0.4"
+    dependencies {
+        classpath("org.springframework.cloud:spring-cloud-contract-gradle-plugin:$scContractVersion")
+        // remember to add this:
+        classpath("org.springframework.cloud:spring-cloud-contract-spec-kotlin:$scContractVersion")
+    }
 }
 
 dependencies {
@@ -41,6 +54,9 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
     testImplementation("com.h2database:h2")
+    testImplementation("org.springframework.cloud:spring-cloud-starter-contract-verifier")
+    testImplementation("org.springframework.cloud:spring-cloud-contract-spec-kotlin")
+    testImplementation(kotlin("stdlib-jdk8"))
 }
 
 configurations {
@@ -51,10 +67,6 @@ configurations {
 
 extra["springCloudVersion"] = "2022.0.4"
 
-if (System.getenv("SPRING_PROFILES_ACTIVE") == "docker") {
-    extra["testcontainersVersion"] = "1.19.0"
-}
-
 dependencyManagement {
     imports {
         mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
@@ -62,11 +74,9 @@ dependencyManagement {
 }
 
 tasks.withType<Test> {
-    project.logger.info("my info message")
     useJUnitPlatform()
 
-    if (System.getenv("SPRING_PROFILES_ACTIVE") == "docker") {
-        println("HERE")
+    if ((System.getenv("SPRING_PROFILES_ACTIVE") ?: "".contains("docker")) == true) {
         systemProperty("spring.profiles.active", "docker")
         exclude("**/*Embedded*")
     } else {
@@ -97,3 +107,28 @@ tasks.getByName<BootRun>("bootRun") {
     systemProperty("spring.profiles.active", "testdata")
 }
 
+kotlin {
+    jvmToolchain(17)
+}
+
+tasks.contractTest {
+    useJUnitPlatform()
+}
+
+contracts {
+    baseClassForTests.set("cc.tonny.catalogservice.contract.BaseTestsClass")
+    contractsDslDir.set(project.file("${project.rootDir}/src/test/resources/contracts"))
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("bootJava") {
+            artifact(tasks.named("bootJar"))
+            artifact(tasks.named("verifierStubsJar"))
+        }
+    }
+}
+
+tasks.getByName<Jar>("jar") {
+    enabled = false
+}

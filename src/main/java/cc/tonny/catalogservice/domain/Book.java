@@ -6,6 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -38,7 +39,7 @@ public record Book(
 
         @Version
         int version
-) {
+) implements Serializable {
         public static Book of(String isbn, String title, String author, String price, String publisher) {
                 return new Book(null, isbn, title, author, new BigDecimal(price), publisher, null, null, 0);
         }
