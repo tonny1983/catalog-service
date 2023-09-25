@@ -21,8 +21,6 @@ java {
 
 
 repositories {
-    mavenLocal()
-    maven { url = uri("https://mirrors.huaweicloud.com/repository/maven/") }
     mavenCentral()
 
 }
@@ -111,9 +109,6 @@ kotlin {
     jvmToolchain(17)
 }
 
-tasks.contractTest {
-    useJUnitPlatform()
-}
 
 contracts {
     baseClassForTests.set("cc.tonny.catalogservice.contract.BaseTestsClass")
